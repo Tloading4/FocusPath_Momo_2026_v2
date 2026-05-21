@@ -1,0 +1,128 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Helpers (top-level so all matches can use them) ---
+    function validateUserProfile(data) {
+      // Allow partial updates that don't touch email.
+      return
+        (!('email' in data) ||
+          (data.email is string && data.email.matches('.*@.*\\..*')));
+    }
+
+    // 🔐 User Profiles
+    match /userProfiles/{userId} {
+      allow read: if request.auth != null;
+
+      // Owner-only writes; if 'email' is present it must match auth; also pin userId if present
+      allow write: if request.auth != null
+                   && request.auth.uid == userId
+                   && ( !('email' in request.resource.data)
+                        || request.resource.data.email == request.auth.token.email )
+                   && ( !('userId' in request.resource.data)
+                        || request.resource.data.userId == userId )
+                   && validateUserProfile(request.resource.data);
+
+      // User's sessions subcollection
+      match /sessions/{sessionId} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      // User's purchases subcollection
+      match /purchases/{purchaseId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      // User's challenge progress subcollection
+      match /challengeProgress/{questId} {
+        // Signed-in user reads their own progress
+        allow read: if request.auth != null && request.auth.uid == userId;
+
+        // Create new progress doc
+        allow create: if request.auth != null && request.auth.uid == userId;
+
+        // Updates only while unclaimed; treat missing 'claimed' as unclaimed
+        allow update: if request.auth != null
+                      && request.auth.uid == userId
+                      && ( !('claimed' in resource.data)
+                           || resource.data.claimed == false );
+        // Once claimed == true, further writes are blocked by the condition above.
+      }
+
+      // OPTIONAL: per-user active quests
+      match /activeQuests/{questId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // ✅ Streaks (global for leaderboard)
+    match /streaks/{userId} {
+      allow read:  if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ✅ Usage Tracking
+    match /usage/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ✅ Subscriptions (indexed by Stripe subscription ID)
+    match /subscriptions/{subscriptionId} {
+      allow read: if request.auth != null &&
+                     resource.data.user_id == request.auth.uid;
+      allow write: if false;
+    }
+
+    // ✅ Stripe Customers (indexed by Firebase user ID)
+    match /stripe_customers/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+    }
+
+    // ✅ Custom Avatars (indexed by Firebase user ID)
+    match /custom_avatars/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ✅ Gift Card Redemptions
+    match /giftCardRedemptions/{redemptionId} {
+      allow create: if request.auth != null
+                    && request.auth.uid == request.resource.data.userId;
+      allow read:   if request.auth != null
+                    && request.auth.uid == resource.data.userId;
+      // update/delete default to deny
+    }
+
+    // ADD THIS if you have a top‐level "quests" collection:
+    match /quests/{questId} {
+      allow read: if request.auth != null;
+    }
+
+    // ✅ Chat Conversations
+    match /chatConversations/{conversationId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+
+      // Chat messages subcollection
+      match /messages/{messageId} {
+        allow read: if request.auth != null && get(/databases/$(database)/documents/chatConversations/$(conversationId)).data.userId == request.auth.uid;
+        allow write: if request.auth != null && get(/databases/$(database)/documents/chatConversations/$(conversationId)).data.userId == request.auth.uid;
+      }
+    }
+
+    // ✅ Poe Usage Tracking
+    match /poeUsageTracking/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+    }
+
+    // Catch-all: lock down everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

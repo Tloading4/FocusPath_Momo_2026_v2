@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Focus Path™</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 380px;
+      min-height: 500px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: white;
+      overflow-x: hidden;
+    }
+
+    .container {
+      padding: 20px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .logo img {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+    }
+
+    .logo h1 {
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .session-status {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .session-active {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: rgba(16, 185, 129, 0.4);
+    }
+
+    .session-timer {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .session-info {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .quick-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .action-btn {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      padding: 16px 12px;
+      color: white;
+      text-decoration: none;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .action-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .action-btn.primary {
+      background: rgba(59, 130, 246, 0.3);
+      border-color: rgba(59, 130, 246, 0.5);
+    }
+
+    .action-btn.danger {
+      background: rgba(239, 68, 68, 0.3);
+      border-color: rgba(239, 68, 68, 0.5);
+    }
+
+    .session-types {
+      margin-bottom: 20px;
+    }
+
+    .session-types h3 {
+      font-size: 16px;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .session-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .session-type {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 12px;
+    }
+
+    .session-type:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.02);
+    }
+
+    .session-type.selected {
+      background: rgba(59, 130, 246, 0.3);
+      border-color: rgba(59, 130, 246, 0.5);
+    }
+
+    .session-type-name {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .session-type-details {
+      font-size: 11px;
+      opacity: 0.8;
+    }
+
+    .stats {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      text-align: center;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    .footer {
+      text-align: center;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      font-size: 12px;
+    }
+
+    .footer-links a {
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+
+    .footer-links a:hover {
+      color: white;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top: 2px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .icon {
+      font-size: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">
+        <img src="icons/icon32.png" alt="Focus Path™">
+        <h1>Focus Path™</h1>
+      </div>
+      <div class="subtitle">Master your focus, unlock your potential</div>
+    </div>
+
+    <!-- Session Status -->
+    <div id="sessionStatus" class="session-status">
+      <div id="sessionTimer" class="session-timer">--:--</div>
+      <div id="sessionInfo" class="session-info">No active session</div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <button id="startSessionBtn" class="action-btn primary">
+        <span class="icon">🎯</span>
+        Start Session
+      </button>
+      <button id="endSessionBtn" class="action-btn danger hidden">
+        <span class="icon">⏹️</span>
+        End Session
+      </button>
+      <button id="openDashboardBtn" class="action-btn">
+        <span class="icon">📊</span>
+        Dashboard
+      </button>
+      <button id="logDistractionBtn" class="action-btn">
+        <span class="icon">⚠️</span>
+        Log Distraction
+      </button>
+    </div>
+
+    <!-- Session Types (shown when starting) -->
+    <div id="sessionTypes" class="session-types hidden">
+      <h3>Choose Session Type</h3>
+      <div class="session-grid">
+        <div class="session-type" data-type="easy">
+          <div class="session-type-name">Easy</div>
+          <div class="session-type-details">15 min • 50 XP</div>
+        </div>
+        <div class="session-type" data-type="medium">
+          <div class="session-type-name">Medium</div>
+          <div class="session-type-details">30 min • 100 XP</div>
+        </div>
+        <div class="session-type" data-type="hard">
+          <div class="session-type-name">Hard</div>
+          <div class="session-type-details">45 min • 150 XP</div>
+        </div>
+        <div class="session-type" data-type="extreme">
+          <div class="session-type-name">Extreme</div>
+          <div class="session-type-details">60 min • 200 XP</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- User Stats -->
+    <div class="stats">
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div id="totalXP" class="stat-value">0</div>
+          <div class="stat-label">Total XP</div>
+        </div>
+        <div class="stat-item">
+          <div id="currentLevel" class="stat-value">1</div>
+          <div class="stat-label">Level</div>
+        </div>
+        <div class="stat-item">
+          <div id="currentStreak" class="stat-value">0</div>
+          <div class="stat-label">Streak</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div class="footer-links">
+        <a href="#" id="settingsLink">Settings</a>
+        <a href="#" id="helpLink">Help</a>
+        <a href="#" id="aboutLink">About</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

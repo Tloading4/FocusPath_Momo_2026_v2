@@ -1,0 +1,695 @@
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { useSubscription } from '../../hooks/useSubscription';
+import {
+  doc,
+  getDoc,
+  setDoc,
+  onSnapshot,
+} from 'firebase/firestore';
+import { db } from '../../firebase';
+import { ExtensionBridge } from '../../services/ExtensionBridge';
+import { TutorialManager } from '../Tutorial/TutorialManager';
+import { FocusTimer } from '../Timer/FocusTimer';
+import { SessionHistory } from '../History/SessionHistory';
+import { XPProgress } from './XPProgress';
+import { DailyTip } from './DailyTip';
+import { PersonalizedTips } from './PersonalizedTips';
+import { StreakTracker } from '../Streaks/StreakTracker';
+import { Leaderboard } from '../Leaderboard/Leaderboard';
+import { Marketplace } from '../Marketplace/Marketplace';
+import { Settings } from '../Settings/Settings';
+import { UserAvatar } from './UserAvatar';
+import { CollectionsRoom } from '../Collections/CollectionsRoom';
+import { CollectionsPreviewCard } from '../Collections/CollectionsPreviewCard';
+import { QuestsPreviewCard } from '../Challenges/QuestsPreviewCard';
+import { PremiumUpgrade } from '../Monetization/PremiumUpgrade';
+import { SubscriptionManager } from '../Monetization/SubscriptionManager';
+import { UsageLimiter } from '../Monetization/UsageLimiter';
+import { ChallengesSystem } from '../Challenges/ChallengesSystem';
+import { AchievementNotification } from '../Timer/AchievementNotification';
+import { DashboardCustomizer } from './DashboardCustomizer';
+import {
+  LogOut,
+  Timer,
+  History,
+  Award,
+  Target,
+  Trophy,
+  ShoppingBag,
+  Settings as SettingsIcon,
+  Star,
+  Calendar,
+  Sparkles,
+  CreditCard,
+  LayoutGrid
+} from 'lucide-react';
+
+interface DashboardProps {
+  profileCompleted?: boolean;
+}
+
+export function Dashboard({ profileCompleted }: DashboardProps) {
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [totalXP, setTotalXP] = useState(0);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [userDisplayName, setUserDisplayName] = useState<string>('');
+  const [activeBackground, setActiveBackground] = useState<string | null>(null);
+  const [backgroundLoading, setBackgroundLoading] = useState(true);
+  const [showCollections, setShowCollections] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [dashboardAchievement, setDashboardAchievement] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showCustomizer, setShowCustomizer] = useState(false);
+  const [widgetVisibility, setWidgetVisibility] = useState({
+    xpProgress: true,
+    streakTracker: true,
+    questsPreview: true,
+    dailyTip: true,
+    personalizedTips: true,
+    collectionsPreview: true,
+  });
+
+  const { logout, currentUser } = useAuth();
+  const { subscription } = useSubscription();
+  const extensionBridge = ExtensionBridge.getInstance();
+
+  // Keyboard navigation refs
+  const tablistRef = useRef<HTMLDivElement>(null);
+  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  // Background themes mapping
+  const backgroundThemes: Record<string, string> = {
+    'bg_mountain_peaks': 'https://images.pexels.com/photos/1366919/pexels-photo-1366919.jpeg',
+    'bg_ocean_waves': 'https://images.pexels.com/photos/1001682/pexels-photo-1001682.jpeg',
+    'bg_forest_path': 'https://images.pexels.com/photos/1496373/pexels-photo-1496373.jpeg',
+    'bg_desert_dunes': 'https://wallpaperaccess.com/full/100630.jpg',
+    'bg_northern_lights': 'https://images.pexels.com/photos/1933239/pexels-photo-1933239.jpeg',
+    'bg_cherry_blossoms': 'https://static.vecteezy.com/system/resources/previews/036/105/188/large_2x/ai-generated-beautiful-japanese-garden-with-cherry-blossom-and-pagoda-ai-generated-free-photo.jpg',
+    'bg_city_skyline': 'https://wallpapercave.com/wp/wp2329756.jpg',
+    'bg_lavender_fields': 'https://images.pexels.com/photos/1166209/pexels-photo-1166209.jpeg'
+  };
+  const defaultBackground = 'https://images.pexels.com/photos/1257860/pexels-photo-1257860.jpeg';
+
+  // Focus a tab (sets active and moves keyboard focus)
+  const focusTab = useCallback((id: string) => {
+    setActiveTab(id);
+    const el = tabRefs.current[id];
+    if (el) el.focus();
+  }, []);
+
+  // Sync profile with extension (one-off call; continuous sync handled by snapshot below)
+  const syncProfileWithExtension = async () => {
+    if (!currentUser) return;
+    try {
+      const userProfileDoc = await getDoc(doc(db, 'userProfiles', currentUser.uid));
+      if (userProfileDoc.exists()) {
+        const profileData = userProfileDoc.data();
+        extensionBridge.syncUserProfile(profileData);
+      }
+    } catch (error) {
+      console.error('Error syncing profile with extension:', error);
+    }
+  };
+
+  // Real-time profile updates (display name, totalXP, background, etc.)
+  useEffect(() => {
+    if (!currentUser) {
+      setBackgroundLoading(false);
+      return;
+    }
+
+    const profileRef = doc(db, 'userProfiles', currentUser.uid);
+    const unsub = onSnapshot(
+      profileRef,
+      (snap) => {
+        if (!snap.exists()) {
+          setUserDisplayName('New User');
+          setTotalXP(0);
+          setBackgroundLoading(false);
+          return;
+        }
+        const data = snap.data() as any;
+        setUserDisplayName(data.displayName || 'New User');
+        setTotalXP(typeof data.totalXP === 'number' ? data.totalXP : 0);
+
+        if (data.activeBackground) {
+          setActiveBackground(data.activeBackground);
+        }
+
+        try {
+          extensionBridge.syncUserProfile(data);
+        } catch (e) {
+          console.error('Extension sync failed:', e);
+        }
+
+        setBackgroundLoading(false);
+        setIsLoading(false);
+        setError(null);
+
+        const prefs = data.preferences || {};
+        const dashboardWidgets = prefs.dashboardWidgets || {};
+        setWidgetVisibility({
+          xpProgress: dashboardWidgets.xpProgress !== false,
+          streakTracker: dashboardWidgets.streakTracker !== false,
+          questsPreview: dashboardWidgets.questsPreview !== false,
+          dailyTip: dashboardWidgets.dailyTip !== false,
+          personalizedTips: dashboardWidgets.personalizedTips !== false,
+          collectionsPreview: dashboardWidgets.collectionsPreview !== false,
+        });
+      },
+      (err) => {
+        console.error('Profile snapshot error:', err);
+        setBackgroundLoading(false);
+        setIsLoading(false);
+        setError('Failed to load profile data. Please refresh the page.');
+      }
+    );
+
+    return () => unsub();
+  }, [currentUser, extensionBridge]);
+
+  // One-off: initial extension sync on user change
+  useEffect(() => {
+    if (!currentUser) return;
+    syncProfileWithExtension();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser]);
+
+  const handleSessionComplete = (xp: number) => {
+    checkForDashboardAchievements(xp);
+    setRefreshTrigger(prev => prev + 1);
+  };
+
+  const checkForDashboardAchievements = async (_xpJustEarned: number) => {
+    if (!currentUser) return;
+
+    try {
+      const profileRef = doc(db, 'userProfiles', currentUser.uid);
+      const profileSnap = await getDoc(profileRef);
+      const profileData = profileSnap.exists() ? (profileSnap.data() as any) : {};
+      const xpNow = profileData.totalXP || 0;
+      const milestones = profileData.milestones || {};
+
+      if (xpNow >= 100 && milestones.first100 !== true) {
+        setDashboardAchievement({
+          id: 'first_hundred_dashboard',
+          name: 'Century Club!',
+          description: "You've earned your first 100 XP!",
+          icon: '💯',
+          rarity: 'common',
+          xpReward: 25
+        });
+        await setDoc(profileRef, { milestones: { ...milestones, first100: true } }, { merge: true });
+      }
+
+      if (xpNow >= 500 && milestones.hit500 !== true) {
+        setDashboardAchievement({
+          id: 'level_2_dashboard',
+          name: 'Level Up!',
+          description: 'Welcome to Level 2, Focus Practitioner!',
+          icon: '⬆️',
+          rarity: 'rare',
+          xpReward: 50
+        });
+        await setDoc(profileRef, { milestones: { ...milestones, hit500: true } }, { merge: true });
+      }
+    } catch (error) {
+      console.error('Error checking dashboard achievements:', error);
+    }
+  };
+
+  const handleSettingsChange = () => setRefreshTrigger(prev => prev + 1);
+
+  const handleMarketplaceChange = () => {
+    setRefreshTrigger(prev => prev + 1);
+    syncProfileWithExtension();
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (err) {
+      console.error('Failed to logout:', err);
+    }
+  };
+
+  const handleAvatarClick = () => setShowCollections(true);
+  const handleUpgrade = () => setShowUpgradeModal(true);
+  const handleCustomizerClose = () => {
+    setShowCustomizer(false);
+    setRefreshTrigger(prev => prev + 1);
+  };
+
+  const tabs = [
+    { id: 'dashboard', name: 'Dashboard', icon: Target },
+    { id: 'timer', name: 'Timer', icon: Timer },
+    { id: 'history', name: 'History', icon: History },
+    { id: 'progress', name: 'Progress', icon: Award },
+    { id: 'challenges', name: 'Quests', icon: Calendar },
+    { id: 'leaderboard', name: 'Leaderboard', icon: Trophy },
+    { id: 'marketplace', name: 'Marketplace', icon: ShoppingBag },
+    { id: 'subscription', name: 'Subscription', icon: CreditCard },
+    { id: 'settings', name: 'Settings', icon: SettingsIcon }
+  ];
+
+  const currentBackgroundUrl =
+    activeBackground && backgroundThemes[activeBackground]
+      ? backgroundThemes[activeBackground]
+      : defaultBackground;
+
+  // Arrow-key handling on the tablist container (no global hotkeys)
+  const onTablistKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(e.key)) return;
+    e.preventDefault();
+    e.stopPropagation(); // extra safety if parent handlers exist
+
+    const i = tabs.findIndex(t => t.id === activeTab);
+    if (i < 0) return;
+
+    let next = i;
+    if (e.key === 'ArrowRight') next = (i + 1) % tabs.length;
+    else if (e.key === 'ArrowLeft') next = (i - 1 + tabs.length) % tabs.length;
+    else if (e.key === 'Home') next = 0;
+    else if (e.key === 'End') next = tabs.length - 1;
+
+    focusTab(tabs[next].id);
+  };
+
+  // Autofocus the active tab on mount so arrows work without clicking first
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      tabRefs.current[activeTab]?.focus();
+    });
+    return () => cancelAnimationFrame(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Skip to main content link for keyboard users
+  const skipToMainContent = (e: React.MouseEvent | React.KeyboardEvent) => {
+    e.preventDefault();
+    const mainContent = document.getElementById('main-content');
+    if (mainContent) {
+      mainContent.focus();
+      mainContent.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  return (
+    <TutorialManager>
+      <div className="min-h-screen relative">
+        {/* Skip to main content link */}
+        <a
+          href="#main-content"
+          onClick={skipToMainContent}
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium"
+        >
+          Skip to main content
+        </a>
+        <div className="min-h-screen relative">
+          {/* Dynamic Background Layer */}
+          <div
+            className={`fixed inset-0 bg-cover bg-center transition-all duration-1000 z-0 ${backgroundLoading ? 'opacity-0' : 'opacity-100'}`}
+            style={{ backgroundImage: `url('${currentBackgroundUrl}')` }}
+          />
+          {/* Fallback tint while background is loading */}
+          {backgroundLoading && <div className="fixed inset-0 bg-neutral-900 z-0" />}
+
+          {/* Gradient Overlay */}
+          <div className="fixed inset-0 bg-gradient-to-br from-indigo-900/85 via-purple-900/85 to-pink-900/85 z-10" />
+
+          {/* Content Layer */}
+          <div className="relative z-20 min-h-screen">
+            {/* Header */}
+            <header className="bg-white/10 backdrop-blur-lg border-b border-white/20" role="banner">
+              <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+                <div className="flex justify-between items-center h-14 sm:h-16">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <img
+                      src="/icon16.png"
+                      alt="Focus Path Logo"
+                      className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl"
+                    />
+                    <div className="flex items-center gap-2">
+                      <h1 className="text-lg sm:text-2xl font-bold text-white">Focus Path</h1>
+                      <span className="text-xs sm:text-sm bg-white/10 text-gray-300 px-2 py-1 rounded-full font-medium">
+                        v0.1.5
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 sm:gap-4">
+                    {subscription && (
+                      <div className="hidden md:flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
+                        {subscription.tier === 'standard' ? (
+                          <Star className="h-4 w-4 text-blue-400" />
+                        ) : (
+                          <Sparkles className="h-4 w-4 text-purple-400" />
+                        )}
+                        <span className="text-white text-sm capitalize">{subscription.tier}</span>
+                        {subscription.tier === 'standard' && (
+                          <button
+                            onClick={() => setShowUpgradeModal(true)}
+                            className="ml-2 text-xs bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 px-2 py-1 rounded transition-all"
+                          >
+                            Upgrade
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    <button
+                      onClick={handleAvatarClick}
+                      className="flex items-center gap-2 sm:gap-3 hover:bg-white/10 p-1 sm:p-2 rounded-lg transition-all group"
+                      title="View Collections"
+                    >
+                      <UserAvatar refreshTrigger={refreshTrigger} size="medium" />
+                      <div className="text-right hidden sm:block">
+                        <div className="text-sm font-medium text-white group-hover:text-blue-300 transition-colors">
+                          {userDisplayName}
+                        </div>
+                        <div className="text-xs text-gray-300 group-hover:text-blue-400 transition-colors">
+                          {subscription?.tier === 'standard' ? 'Standard User' : 'Premium User'}
+                        </div>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => setShowCustomizer(true)}
+                      className="flex items-center gap-1 sm:gap-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 px-2 sm:px-4 py-2 rounded-lg transition-all"
+                      title="Customize Dashboard"
+                    >
+                      <LayoutGrid className="h-4 w-4" />
+                      <span className="hidden sm:inline">Customize</span>
+                    </button>
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center gap-1 sm:gap-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 px-2 sm:px-4 py-2 rounded-lg transition-all"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      <span className="hidden sm:inline">Logout</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </header>
+
+            {/* Navigation */}
+            <nav className="bg-white/5 backdrop-blur-lg border-b border-white/10" role="navigation" aria-label="Main navigation">
+              <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+                <div
+                  ref={tablistRef}
+                  role="tablist"
+                  aria-label="Main"
+                  tabIndex={0}
+                  onKeyDown={onTablistKeyDown}
+                  className="flex space-x-1 sm:space-x-2 overflow-x-auto scrollbar-hide focus:outline-none py-1"
+                  style={{
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none',
+                    WebkitOverflowScrolling: 'touch'
+                  }}
+                >
+                  {tabs.map((tab) => {
+                    const IconComp = tab.icon;
+                    const selected = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        ref={(el) => (tabRefs.current[tab.id] = el)}
+                        role="tab"
+                        aria-selected={selected}
+                        tabIndex={selected ? 0 : -1}
+                        onClick={() => focusTab(tab.id)}
+                        data-tab={tab.id}
+                        className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-3 sm:py-4 border-b-2 font-medium text-xs sm:text-sm transition-all whitespace-nowrap ${
+                          selected
+                            ? 'border-blue-400 text-blue-300'
+                            : 'border-transparent text-gray-300 hover:text-white hover:border-gray-300'
+                        }`}
+                      >
+                        <IconComp className="h-4 w-4" />
+                        <span className="hidden sm:inline">{tab.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </nav>
+
+            {/* Welcome Message */}
+            {!isLoading && !error && (
+              <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 pt-4 sm:pt-6">
+                <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/30 rounded-xl sm:rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6 animate-slide-up">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                    <div className="text-3xl sm:text-4xl animate-bounce-in" aria-hidden="true">👋</div>
+                    <div className="flex-1">
+                      <h2 className="text-xl sm:text-2xl font-bold text-white animate-slide-down mb-1">
+                        Welcome back, {userDisplayName}!
+                      </h2>
+                      <p className="text-sm sm:text-base text-blue-200 animate-fade-in">
+                        {totalXP > 0
+                          ? `You have ${totalXP} XP. Ready to level up today?`
+                          : "Let's make today productive! Choose an action below to get started."
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Main Content */}
+            <main
+              id="main-content"
+              className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8"
+              role="main"
+              tabIndex={-1}
+              aria-live="polite"
+              aria-atomic="false"
+            >
+              {/* Loading State */}
+              {isLoading && (
+                <div className="flex items-center justify-center min-h-[400px]" role="status" aria-live="polite">
+                  <div className="text-center">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-white/20 border-t-white mb-4"></div>
+                    <p className="text-white text-lg">Loading your dashboard...</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Error State */}
+              {error && !isLoading && (
+                <div className="max-w-2xl mx-auto" role="alert" aria-live="assertive">
+                  <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-6 text-center">
+                    <div className="text-5xl mb-4">⚠️</div>
+                    <h3 className="text-xl font-bold text-red-300 mb-2">Something went wrong</h3>
+                    <p className="text-red-200 mb-4">{error}</p>
+                    <button
+                      onClick={() => window.location.reload()}
+                      className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg transition-all"
+                    >
+                      Refresh Page
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Content - Only show when not loading and no error */}
+              {!isLoading && !error && (
+                <>
+              {activeTab === 'dashboard' && (
+                <div className="space-y-4 sm:space-y-6">
+                  {/* Top Stats Row */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+                    {widgetVisibility.xpProgress && (
+                      <XPProgress
+                        totalXP={totalXP}
+                        refreshTrigger={refreshTrigger}
+                        detailed={false}
+                        size="medium"
+                      />
+                    )}
+                    {widgetVisibility.streakTracker && (
+                      <StreakTracker refreshTrigger={refreshTrigger} />
+                    )}
+                    {widgetVisibility.questsPreview && (
+                      <QuestsPreviewCard
+                        refreshTrigger={refreshTrigger}
+                        onOpenQuests={() => setActiveTab('challenges')}
+                      />
+                    )}
+                  </div>
+
+                  {/* Tips, Collections, and AI Row */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+                    {widgetVisibility.dailyTip && (
+                      <div>
+                        <DailyTip />
+                      </div>
+                    )}
+                    {widgetVisibility.personalizedTips && (
+                      <div>
+                        <PersonalizedTips refreshTrigger={refreshTrigger} />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Collections Row */}
+                  {widgetVisibility.collectionsPreview && (
+                    <div className="max-w-2xl mx-auto">
+                      <CollectionsPreviewCard
+                        refreshTrigger={refreshTrigger}
+                        onOpenCollections={handleAvatarClick}
+                      />
+                    </div>
+                  )}
+
+                  {/* Quick Actions - Bottom CTA */}
+                  <div className="max-w-2xl mx-auto">
+                    <div className="glass-card rounded-xl p-4 sm:p-6 shadow-2xl hover-lift animate-fade-in">
+                      <div className="text-center mb-6">
+                        <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-3 rounded-2xl mx-auto w-fit mb-3 animate-pulse-glow" aria-hidden="true">
+                          <Target className="h-6 w-6 sm:h-8 sm:w-8 text-white animate-float" />
+                        </div>
+                        <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">Ready to Focus?</h2>
+                        <p className="text-sm sm:text-base text-gray-300">Choose your next action to boost productivity</p>
+                      </div>
+
+                      <div className="space-y-3 sm:space-y-4">
+                        <button
+                          onClick={() => setActiveTab('timer')}
+                          className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 sm:py-5 px-6 rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3 font-semibold text-base sm:text-lg shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-500/50"
+                          aria-label="Start a new focus session"
+                        >
+                          <Timer className="h-5 w-5 sm:h-6 sm:w-6" />
+                          <span>Start Focus Session</span>
+                        </button>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <button
+                            onClick={() => setActiveTab('marketplace')}
+                            className="bg-white/10 hover:bg-white/20 text-white py-3 sm:py-4 px-4 rounded-xl transition-all flex flex-col sm:flex-row items-center justify-center gap-2 text-sm sm:text-base font-medium hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-white/50"
+                            aria-label="Visit marketplace"
+                          >
+                            <ShoppingBag className="h-5 w-5 sm:h-4 sm:w-4" />
+                            <span>Marketplace</span>
+                          </button>
+                          <button
+                            onClick={() => setActiveTab('challenges')}
+                            className="bg-white/10 hover:bg-white/20 text-white py-3 sm:py-4 px-4 rounded-xl transition-all flex flex-col sm:flex-row items-center justify-center gap-2 text-sm sm:text-base font-medium hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-white/50"
+                            aria-label="View quests"
+                          >
+                            <Calendar className="h-5 w-5 sm:h-4 sm:w-4" />
+                            <span>Quests</span>
+                          </button>
+                        </div>
+
+                        <button
+                          onClick={() => setActiveTab('history')}
+                          className="w-full bg-white/10 hover:bg-white/20 text-white py-3 px-4 rounded-lg transition-all flex items-center justify-center gap-2 text-sm sm:text-base hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-white/50"
+                          aria-label="View session history"
+                        >
+                          <History className="h-4 w-4" />
+                          <span>View Session History</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'timer' && (
+                <div className="max-w-2xl mx-auto">
+                  <UsageLimiter feature="sessions" onUpgrade={handleUpgrade}>
+                    <FocusTimer onSessionComplete={handleSessionComplete} />
+                  </UsageLimiter>
+                </div>
+              )}
+
+              {activeTab === 'history' && <SessionHistory refreshTrigger={refreshTrigger} />}
+
+              {activeTab === 'progress' && (
+                <div className="max-w-6xl mx-auto space-y-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2">
+                      <XPProgress totalXP={totalXP} refreshTrigger={refreshTrigger} detailed />
+                    </div>
+                    <div>
+                      <StreakTracker refreshTrigger={refreshTrigger} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'challenges' && (
+                <div className="max-w-6xl mx-auto">
+                  <ChallengesSystem
+                    refreshTrigger={refreshTrigger}
+                    onChallengeComplete={() => {
+                      setRefreshTrigger(prev => prev + 1);
+                    }}
+                  />
+                </div>
+              )}
+
+              {activeTab === 'leaderboard' && (
+                <div className="max-w-4xl mx-auto">
+                  <Leaderboard refreshTrigger={refreshTrigger} />
+                </div>
+              )}
+
+              {activeTab === 'marketplace' && (
+                <div className="max-w-6xl mx-auto">
+                  <Marketplace
+                    refreshTrigger={refreshTrigger}
+                    onMarketplaceChange={handleMarketplaceChange}
+                  />
+                </div>
+              )}
+
+              {activeTab === 'subscription' && (
+                <div className="max-w-6xl mx-auto">
+                  <SubscriptionManager onUpgrade={handleUpgrade} />
+                </div>
+              )}
+
+              {activeTab === 'settings' && <Settings onSettingsChange={handleSettingsChange} />}
+                </>
+              )}
+            </main>
+
+            {/* Collections Room Modal */}
+            <CollectionsRoom
+              isOpen={showCollections}
+              onClose={() => {
+                setShowCollections(false);
+                setRefreshTrigger(prev => prev + 1);
+              }}
+            />
+
+            {/* Upgrade Modal */}
+            {showUpgradeModal && (
+              <PremiumUpgrade isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
+            )}
+
+            {/* Dashboard Achievement Notifications */}
+            {dashboardAchievement && (
+              <AchievementNotification
+                achievement={dashboardAchievement}
+                isVisible={!!dashboardAchievement}
+                onClose={() => setDashboardAchievement(null)}
+                autoCloseDelay={4000}
+              />
+            )}
+
+            {/* Dashboard Customizer Modal */}
+            <DashboardCustomizer
+              isOpen={showCustomizer}
+              onClose={handleCustomizerClose}
+              onWidgetVisibilityChange={() => setRefreshTrigger(prev => prev + 1)}
+            />
+          </div>
+        </div>
+      </div>
+    </TutorialManager>
+  );
+}

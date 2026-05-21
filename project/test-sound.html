@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sound System Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #fff;
+        }
+        h1 { color: #4A90E2; }
+        button {
+            background: #4A90E2;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 8px;
+            font-size: 14px;
+        }
+        button:hover { background: #357ABD; }
+        .sound-option {
+            background: rgba(255,255,255,0.1);
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .volume-control {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+        }
+        input[type="range"] {
+            width: 100%;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔊 Focus Path Sound System Test</h1>
+    <p>Test all available alert sounds with volume control</p>
+
+    <div class="volume-control">
+        <label>Volume: <span id="volumeValue">50</span>%</label>
+        <input type="range" id="volumeSlider" min="0" max="100" value="50">
+    </div>
+
+    <div id="soundOptions"></div>
+
+    <script type="module">
+        const sounds = [
+            { value: 'classic-beep', label: 'Classic Beep', emoji: '🔔', description: 'Traditional triple beep sound' },
+            { value: 'gentle-chime', label: 'Gentle Chime', emoji: '🎵', description: 'Soft ascending musical chime' },
+            { value: 'digital-bell', label: 'Digital Bell', emoji: '🔊', description: 'Modern digital notification' },
+            { value: 'success-fanfare', label: 'Success Fanfare', emoji: '🎉', description: 'Celebratory victory sound' },
+            { value: 'meditation-bowl', label: 'Meditation Bowl', emoji: '🧘', description: 'Calming singing bowl tone' },
+            { value: 'nature-chirp', label: 'Nature Chirp', emoji: '🐦', description: 'Pleasant bird-like chirp' },
+            { value: 'soft-gong', label: 'Soft Gong', emoji: '🪘', description: 'Deep resonant gong' }
+        ];
+
+        let audioContext = null;
+        let currentVolume = 0.5;
+
+        function getAudioContext() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            return audioContext;
+        }
+
+        function playTone(frequency, duration, delay = 0, volume = 0.3, type = 'sine') {
+            setTimeout(() => {
+                const ctx = getAudioContext();
+                const oscillator = ctx.createOscillator();
+                const gainNode = ctx.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(ctx.destination);
+
+                oscillator.frequency.setValueAtTime(frequency, ctx.currentTime);
+                oscillator.type = type;
+
+                gainNode.gain.setValueAtTime(volume, ctx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+
+                oscillator.start(ctx.currentTime);
+                oscillator.stop(ctx.currentTime + duration);
+            }, delay);
+        }
+
+        function playSound(soundType, volume) {
+            switch (soundType) {
+                case 'classic-beep':
+                    playTone(800, 0.2, 0, volume, 'sine');
+                    playTone(800, 0.2, 300, volume, 'sine');
+                    playTone(800, 0.2, 600, volume, 'sine');
+                    break;
+                case 'gentle-chime':
+                    playTone(523.25, 0.4, 0, volume * 0.8, 'sine');
+                    playTone(659.25, 0.4, 200, volume * 0.8, 'sine');
+                    playTone(783.99, 0.6, 400, volume * 0.8, 'sine');
+                    break;
+                case 'digital-bell':
+                    playTone(1046.50, 0.15, 0, volume, 'square');
+                    playTone(1318.51, 0.15, 150, volume * 0.9, 'square');
+                    playTone(1567.98, 0.3, 300, volume * 0.8, 'square');
+                    break;
+                case 'success-fanfare':
+                    playTone(523.25, 0.2, 0, volume, 'triangle');
+                    playTone(659.25, 0.2, 150, volume, 'triangle');
+                    playTone(783.99, 0.2, 300, volume, 'triangle');
+                    playTone(1046.50, 0.4, 450, volume, 'triangle');
+                    break;
+                case 'meditation-bowl':
+                    playTone(196, 1.2, 0, volume * 0.7, 'sine');
+                    playTone(220, 1.2, 50, volume * 0.6, 'sine');
+                    playTone(246.94, 1.2, 100, volume * 0.5, 'sine');
+                    break;
+                case 'nature-chirp':
+                    playTone(2093, 0.08, 0, volume * 0.6, 'sine');
+                    playTone(2349.32, 0.08, 100, volume * 0.7, 'sine');
+                    playTone(2793.83, 0.12, 200, volume * 0.6, 'sine');
+                    playTone(2349.32, 0.08, 400, volume * 0.5, 'sine');
+                    break;
+                case 'soft-gong':
+                    playTone(110, 0.8, 0, volume * 0.8, 'sine');
+                    playTone(165, 0.8, 50, volume * 0.6, 'sine');
+                    playTone(220, 1.0, 100, volume * 0.5, 'sine');
+                    break;
+            }
+        }
+
+        // Volume control
+        const volumeSlider = document.getElementById('volumeSlider');
+        const volumeValue = document.getElementById('volumeValue');
+
+        volumeSlider.addEventListener('input', (e) => {
+            currentVolume = e.target.value / 100;
+            volumeValue.textContent = e.target.value;
+        });
+
+        // Render sound options
+        const container = document.getElementById('soundOptions');
+        sounds.forEach(sound => {
+            const div = document.createElement('div');
+            div.className = 'sound-option';
+            div.innerHTML = `
+                <div>
+                    <span style="font-size: 24px; margin-right: 12px;">${sound.emoji}</span>
+                    <strong>${sound.label}</strong>
+                    <br>
+                    <small style="color: #999;">${sound.description}</small>
+                </div>
+                <button onclick="playSound('${sound.value}', ${currentVolume})">Play Sound</button>
+            `;
+            container.appendChild(div);
+        });
+
+        window.playSound = playSound;
+
+        console.log('✅ Sound system test loaded successfully');
+    </script>
+</body>
+</html>

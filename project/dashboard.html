@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Focus Path™ Dashboard</title>
+  <link rel="stylesheet" href="assets/tailwind.min.css">
+  <link rel="stylesheet" href="assets/dashboard.css">
+  <style>
+    body {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      color: white;
+      min-height: 100vh;
+    }
+    
+    .glass-card {
+      backdrop-filter: blur(20px);
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+  </style>
+</head>
+<body>
+  <div class="min-h-screen relative">
+    <!-- Background Overlay -->
+    <div class="fixed inset-0 bg-gradient-to-br from-indigo-900/85 via-purple-900/85 to-pink-900/85 z-10"></div>
+    
+    <!-- Content Layer -->
+    <div class="relative z-20 min-h-screen">
+      <!-- Header -->
+      <header class="bg-white/10 backdrop-blur-lg border-b border-white/20">
+        <div class="max-w-7xl mx-auto px-4 lg:px-8">
+          <div class="flex justify-between items-center h-16">
+            <div class="flex items-center gap-3">
+              <img src="icons/icon16.png" alt="Focus Path™ Logo" class="h-10 w-10 rounded-xl">
+              <h1 class="text-2xl font-bold text-white">Focus Path™</h1>
+            </div>
+            
+            <div class="flex items-center gap-4">
+              <!-- User Profile -->
+              <div class="flex items-center gap-3 hover:bg-white/10 p-2 rounded-lg transition-all group">
+                <div class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-full w-10 h-10 flex items-center justify-center shadow-lg border-2 border-white/20">
+                  <span id="userInitial" class="text-white font-bold">U</span>
+                </div>
+                <div class="text-right">
+                  <div id="displayName" class="text-sm font-medium text-white group-hover:text-blue-300 transition-colors">
+                    User
+                  </div>
+                  <div id="userLevel" class="text-xs text-gray-300 group-hover:text-blue-400 transition-colors">
+                    Level 1
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Navigation Tabs -->
+      <nav class="bg-white/5 backdrop-blur-sm border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-4 lg:px-8">
+          <div class="flex space-x-8 overflow-x-auto">
+            <button class="tab-button flex items-center gap-2 px-3 py-4 border-b-2 font-medium text-sm transition-all border-blue-400 text-blue-300" data-tab="dashboard">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-target"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+              <span>Dashboard</span>
+            </button>
+            <button class="tab-button flex items-center gap-2 px-3 py-4 border-b-2 font-medium text-sm transition-all border-transparent text-gray-300 hover:text-white hover:border-gray-300" data-tab="timer">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-timer"><path d="M10 2h4"/><path d="M12 14v-4"/><path d="M4 13a8 8 0 0 1 8-7 8 8 0 1 1-5.3 14L4 17.6"/><path d="M9 17H4v5"/></svg>
+              <span>Timer</span>
+            </button>
+            <button class="tab-button flex items-center gap-2 px-3 py-4 border-b-2 font-medium text-sm transition-all border-transparent text-gray-300 hover:text-white hover:border-gray-300" data-tab="history">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-history"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+              <span>History</span>
+            </button>
+            <button class="tab-button flex items-center gap-2 px-3 py-4 border-b-2 font-medium text-sm transition-all border-transparent text-gray-300 hover:text-white hover:border-gray-300" data-tab="progress">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-award"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+              <span>Progress</span>
+            </button>
+            <button class="tab-button flex items-center gap-2 px-3 py-4 border-b-2 font-medium text-sm transition-all border-transparent text-gray-300 hover:text-white hover:border-gray-300" data-tab="settings">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span>Settings</span>
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Welcome Message -->
+      <div class="max-w-7xl mx-auto px-4 lg:px-8 pt-6">
+        <div class="bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/30 rounded-2xl p-6 mb-6 animate-slide-up">
+          <div class="flex items-center gap-4">
+            <div class="text-4xl animate-bounce-in">👋</div>
+            <div>
+              <h2 id="welcomeHeading" class="text-2xl font-bold text-white mb-2 animate-slide-down">
+                Welcome, Focus Warrior!
+              </h2>
+              <p class="text-base text-blue-200 animate-fade-in">
+                Ready to boost your focus and productivity today?
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content -->
+      <main class="max-w-7xl mx-auto px-4 lg:px-8 py-8">
+        <!-- Dashboard Tab -->
+        <div id="dashboard-tab" class="tab-pane active">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 space-y-8">
+              <!-- Daily Tip -->
+              <div class="glass-card rounded-2xl p-8 shadow-2xl hover-lift h-fit transition-all duration-500 animate-slide-up">
+                <div class="flex items-center justify-between mb-6">
+                  <div class="flex items-center gap-3">
+                    <div class="bg-gradient-to-r from-yellow-500 to-orange-600 p-3 rounded-2xl animate-pulse-glow">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-lightbulb h-6 w-6 text-white animate-float"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+                    </div>
+                    <div class="animate-slide-right">
+                      <h2 class="text-2xl font-bold text-white">Daily Focus Tip</h2>
+                      <p class="text-gray-300">Boost your productivity</p>
+                    </div>
+                  </div>
+                  
+                  <button id="newTipBtn" class="bg-white/10 hover:bg-white/20 p-2 rounded-lg transition-all transform hover:scale-110 hover-bounce btn-press focus-ring" title="Get new tip">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw h-5 w-5 text-white transition-transform duration-300 hover:rotate-180"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+                  </button>
+                </div>
+
+                <div id="tipContent" class="transition-all duration-300">
+                  <div class="mb-4 animate-fade-in">
+                    <span class="text-sm font-semibold px-3 py-1 rounded-full bg-white/10 text-blue-400 animate-bounce-in">
+                      Productivity
+                    </span>
+                  </div>
+                  
+                  <h3 class="text-xl font-bold text-white mb-3 animate-slide-down">
+                    The 2-Minute Rule
+                  </h3>
+                  
+                  <p class="text-gray-300 leading-relaxed animate-fade-in">
+                    If a task takes less than 2 minutes, do it immediately instead of adding it to your to-do list.
+                  </p>
+                </div>
+
+                <div class="mt-6 pt-6 border-t border-white/20 animate-slide-up">
+                  <p class="text-sm text-gray-400 text-center animate-fade-in">
+                    💡 New tip daily • Click refresh for more inspiration
+                  </p>
+                </div>
+              </div>
+
+              <!-- Streak Tracker -->
+              <div class="glass-card rounded-2xl p-6 shadow-2xl hover-lift transition-all duration-500 animate-slide-up">
+                <div class="flex items-center justify-between mb-6">
+                  <div class="flex items-center gap-3">
+                    <div class="bg-gradient-to-r from-blue-500 to-green-600 p-3 rounded-2xl animate-pulse-glow">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-flame h-6 w-6 text-white animate-streak-fire"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+                    </div>
+                    <div class="animate-slide-right">
+                      <h2 class="text-2xl font-bold text-white">Focus Streak</h2>
+                      <p class="text-gray-300">Building Momentum</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                  <div class="bg-white/5 rounded-xl p-4 text-center hover-glow transition-all animate-scale-in card-stagger-1">
+                    <div class="text-3xl mb-2 animate-bounce-in">💫</div>
+                    <div id="currentStreakValue" class="text-2xl font-bold text-white animate-number-count">
+                      0
+                    </div>
+                    <div class="text-sm text-gray-300">Current Streak</div>
+                  </div>
+                  
+                  <div class="bg-white/5 rounded-xl p-4 text-center hover-glow transition-all animate-scale-in card-stagger-2">
+                    <div class="text-3xl mb-2 animate-bounce-in">🏆</div>
+                    <div id="bestStreakValue" class="text-2xl font-bold text-white animate-number-count">0</div>
+                    <div class="text-sm text-gray-300">Best Streak</div>
+                  </div>
+                </div>
+
+                <div class="space-y-4 animate-fade-in">
+                  <div class="flex items-center justify-between">
+                    <span class="text-gray-300">Progress</span>
+                    <span id="streakDaysText" class="text-sm text-gray-400">
+                      0 days
+                    </span>
+                  </div>
+                  
+                  <div class="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                    <div id="streakProgressBar" class="h-2 rounded-full bg-gradient-to-r from-blue-500 to-green-600 progress-animated transition-all duration-1000" style="width: 0%"></div>
+                  </div>
+                </div>
+
+                <div class="mt-6 pt-6 border-t border-white/20">
+                  <div class="grid grid-cols-7 gap-1 animate-slide-up">
+                    <!-- Last 7 days streak indicators will be dynamically generated -->
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs bg-white/5 text-gray-500 hover:bg-white/10">1</div>
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs bg-white/5 text-gray-500 hover:bg-white/10">2</div>
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs bg-white/5 text-gray-500 hover:bg-white/10">3</div>
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs bg-white/5 text-gray-500 hover:bg-white/10">4</div>
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs bg-white/5 text-gray-500 hover:bg-white/10">5</div>
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs bg-white/5 text-gray-500 hover:bg-white/10">6</div>
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs bg-white/5 text-gray-500 hover:bg-white/10">7</div>
+                  </div>
+                  <p class="text-xs text-gray-400 text-center mt-2 animate-fade-in">Last 7 days</p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- XP Progress -->
+            <div>
+              <div class="glass-card rounded-2xl p-6 shadow-2xl hover-lift animate-slide-up relative overflow-hidden">
+                <div class="text-center mb-6">
+                  <div id="levelIconContainer" class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-r from-green-500 to-emerald-600 mb-4 hover-bounce transition-all duration-300 animate-scale-in">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-target h-6 w-6 text-white animate-bounce-in"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                  </div>
+                  <h2 id="userLevelHeading" class="text-2xl font-bold text-white mb-1 animate-slide-down">
+                    Level 1
+                  </h2>
+                  <p id="userLevelTitle" class="text-gray-300 animate-fade-in">Focus Novice</p>
+                </div>
+
+                <div class="mb-6">
+                  <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-medium text-gray-300 animate-slide-right">XP Progress</span>
+                    <span id="xpProgress" class="text-sm font-medium text-gray-300 animate-slide-left">
+                      0 / 500
+                    </span>
+                  </div>
+                  <div class="w-full bg-white/10 rounded-full h-3 overflow-hidden">
+                    <div id="xpProgressBar" class="h-3 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 progress-animated transition-all duration-1000 ease-out" style="width: 0%"></div>
+                  </div>
+                  <p id="xpToNextLevel" class="text-xs text-gray-400 mt-2 animate-fade-in">
+                    500 XP to next level
+                  </p>
+                </div>
+
+                <div class="text-center animate-fade-in">
+                  <p id="totalXpDisplay" class="text-lg font-semibold text-white mb-2 animate-number-count">
+                    0 Total XP
+                  </p>
+                  <p class="text-sm text-gray-300 animate-slide-up">
+                    Keep focusing to reach the next level!
+                  </p>
+                </div>
+
+                <!-- Floating particles effect -->
+                <div class="absolute inset-0 pointer-events-none overflow-hidden">
+                  <div class="absolute w-2 h-2 bg-blue-400/30 rounded-full animate-float" style="left: 20%; top: 10%; animation-delay: 0s; animation-duration: 3s;"></div>
+                  <div class="absolute w-2 h-2 bg-blue-400/30 rounded-full animate-float" style="left: 50%; top: 30%; animation-delay: 0.5s; animation-duration: 4s;"></div>
+                  <div class="absolute w-2 h-2 bg-blue-400/30 rounded-full animate-float" style="left: 80%; top: 50%; animation-delay: 1s; animation-duration: 5s;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Timer Tab -->
+        <div id="timer-tab" class="tab-pane">
+          <div class="max-w-2xl mx-auto">
+            <div class="glass-card rounded-2xl p-8 shadow-2xl hover-lift animate-fade-in relative overflow-hidden">
+              <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-white mb-2 animate-slide-down">Focus Session</h2>
+                <p class="text-base text-gray-300 animate-fade-in">Choose your challenge and start focusing</p>
+              </div>
+
+              <!-- Session Type Selector -->
+              <div class="grid grid-cols-2 gap-3 mb-8">
+                <button class="session-selector p-4 rounded-xl border-2 transition-all duration-300 hover-lift animate-scale-in border-white/20 bg-white/5 text-gray-300 hover:border-white/30 hover:bg-white/10 hover:scale-105 btn-press" data-session-type="easy">
+                  <div class="text-lg font-semibold">Easy Focus</div>
+                  <div class="text-sm opacity-80">15 min • 50 XP</div>
+                </button>
+                <button class="session-selector p-4 rounded-xl border-2 transition-all duration-300 hover-lift animate-scale-in border-white/50 bg-gradient-to-r from-yellow-500 to-orange-600 text-white animate-glow-pulse" data-session-type="medium">
+                  <div class="text-lg font-semibold">Medium Focus</div>
+                  <div class="text-sm opacity-80">30 min • 100 XP</div>
+                </button>
+                <button class="session-selector p-4 rounded-xl border-2 transition-all duration-300 hover-lift animate-scale-in border-white/20 bg-white/5 text-gray-300 hover:border-white/30 hover:bg-white/10 hover:scale-105 btn-press" data-session-type="hard">
+                  <div class="text-lg font-semibold">Hard Focus</div>
+                  <div class="text-sm opacity-80">45 min • 150 XP</div>
+                </button>
+                <button class="session-selector p-4 rounded-xl border-2 transition-all duration-300 hover-lift animate-scale-in border-white/20 bg-white/5 text-gray-300 hover:border-white/30 hover:bg-white/10 hover:scale-105 btn-press" data-session-type="extreme">
+                  <div class="text-lg font-semibold">Extreme Focus</div>
+                  <div class="text-sm opacity-80">60 min • 200 XP</div>
+                </button>
+              </div>
+
+              <!-- Task Input -->
+              <div id="taskInputContainer" class="mb-8">
+                <label class="block text-sm font-medium text-gray-300 mb-2">What are you working on?</label>
+                <input
+                  id="taskInput"
+                  type="text"
+                  placeholder="e.g., Complete math homework, Write essay, Read chapter 5..."
+                  class="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                />
+              </div>
+
+              <!-- Timer Display -->
+              <div class="relative mb-8 animate-scale-in">
+                <div class="w-64 h-64 mx-auto relative">
+                  <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="45"
+                      stroke="rgba(255,255,255,0.1)"
+                      stroke-width="10"
+                      fill="none"
+                    />
+                    <circle
+                      id="timerProgress"
+                      cx="50"
+                      cy="50"
+                      r="45"
+                      stroke="url(#gradient)"
+                      stroke-width="10"
+                      fill="none"
+                      stroke-linecap="round"
+                      stroke-dasharray="282.7433388230814"
+                      stroke-dashoffset="282.7433388230814"
+                      class="transition-all duration-1000 ease-out"
+                    />
+                    <defs>
+                      <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#3B82F6" />
+                        <stop offset="100%" stop-color="#8B5CF6" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  <div class="absolute inset-0 flex items-center justify-center">
+                    <div class="text-center">
+                      <div id="timerDisplay" class="text-5xl font-bold text-white mb-2 transition-all duration-300">
+                        30:00
+                      </div>
+                      <div id="sessionTypeDisplay" class="text-lg font-semibold text-yellow-400 animate-fade-in">
+                        Medium Focus
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Timer Controls -->
+              <div class="flex justify-center gap-4 mb-6 animate-slide-up">
+                <button
+                  id="startTimerBtn"
+                  class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-3 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition-all transform hover:scale-105 flex items-center gap-2 btn-press hover-glow animate-bounce-in text-base"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-play"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  Start
+                </button>
+                
+                <button
+                  id="pauseTimerBtn"
+                  class="bg-gradient-to-r from-yellow-500 to-orange-600 text-white px-8 py-3 rounded-xl font-semibold hover:from-yellow-600 hover:to-orange-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition-all transform hover:scale-105 flex items-center gap-2 btn-press hover-glow animate-pulse-glow text-base hidden"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pause"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                  End
+                </button>
+                
+                <button
+                  id="resetTimerBtn"
+                  class="bg-gradient-to-r from-gray-500 to-gray-600 text-white px-8 py-3 rounded-xl font-semibold hover:from-gray-600 hover:to-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition-all transform hover:scale-105 flex items-center gap-2 btn-press hover-glow text-base"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rotate-ccw"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                  Reset
+                </button>
+              </div>
+
+              <!-- Log Distraction Button -->
+              <div class="text-center mb-6">
+                <button
+                  id="logDistractionButton"
+                  class="bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 px-6 py-3 rounded-xl transition-all flex items-center gap-2 mx-auto hidden"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-brain"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg>
+                  Log Distraction
+                </button>
+              </div>
+
+              <!-- Settings Integration Info -->
+              <div class="mt-6 pt-6 border-t border-white/20 animate-fade-in">
+                <div class="text-center text-sm text-gray-400">
+                  <p>
+                    Default: Medium Focus • 
+                    Sound: On • 
+                    Auto-breaks: Off
+                  </p>
+                  <p class="mt-1">Customize these settings in the Settings tab</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- History Tab -->
+        <div id="history-tab" class="tab-pane">
+          <div class="space-y-8">
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-2xl border border-white/20">
+                <div class="flex items-center gap-3 mb-2">
+                  <div class="bg-blue-500/20 p-2 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-up h-5 w-5 text-blue-400"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+                  </div>
+                  <h3 class="text-lg font-semibold text-white">Total Sessions</h3>
+                </div>
+                <p id="totalSessions" class="text-3xl font-bold text-white">0</p>
+              </div>
+
+              <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-2xl border border-white/20">
+                <div class="flex items-center gap-3 mb-2">
+                  <div class="bg-green-500/20 p-2 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock h-5 w-5 text-green-400"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  </div>
+                  <h3 class="text-lg font-semibold text-white">Total Time</h3>
+                </div>
+                <p id="totalTime" class="text-3xl font-bold text-white">0m</p>
+              </div>
+
+              <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-2xl border border-white/20">
+                <div class="flex items-center gap-3 mb-2">
+                  <div class="bg-purple-500/20 p-2 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-award h-5 w-5 text-purple-400"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+                  </div>
+                  <h3 class="text-lg font-semibold text-white">Total XP</h3>
+                </div>
+                <p id="historyTotalXP" class="text-3xl font-bold text-white">0</p>
+              </div>
+
+              <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-2xl border border-white/20">
+                <div class="flex items-center gap-3 mb-2">
+                  <div class="bg-orange-500/20 p-2 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-target h-5 w-5 text-orange-400"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                  </div>
+                  <h3 class="text-lg font-semibold text-white">Focus Score</h3>
+                </div>
+                <p id="avgFocusScore" class="text-3xl font-bold text-green-400">0%</p>
+              </div>
+            </div>
+
+            <!-- Session History -->
+            <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/20">
+              <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold text-white">Session History</h2>
+                <button id="refreshHistoryBtn" class="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-gray-300 px-3 py-2 rounded-lg transition-all" title="Refresh">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw h-4 w-4"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+                </button>
+              </div>
+              
+              <div class="overflow-x-auto">
+                <table class="w-full">
+                  <thead>
+                    <tr class="border-b border-white/20">
+                      <th class="text-left py-3 px-4 text-gray-300 font-semibold">Date</th>
+                      <th class="text-left py-3 px-4 text-gray-300 font-semibold">Type</th>
+                      <th class="text-left py-3 px-4 text-gray-300 font-semibold">Duration</th>
+                      <th class="text-left py-3 px-4 text-gray-300 font-semibold">XP Earned</th>
+                      <th class="text-left py-3 px-4 text-gray-300 font-semibold">Distractions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sessionHistoryBody">
+                    <tr class="border-b border-white/10 hover:bg-white/5 transition-colors">
+                      <td colspan="5" class="py-4 px-4 text-center text-gray-400">No sessions yet</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress Tab -->
+        <div id="progress-tab" class="tab-pane">
+          <div class="max-w-4xl mx-auto">
+            <div class="glass-card rounded-2xl p-8 shadow-2xl hover-lift animate-slide-up relative overflow-hidden">
+              <div class="text-center mb-6">
+                <div id="progressLevelIcon" class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-r from-green-500 to-emerald-600 mb-4 hover-bounce transition-all duration-300 animate-scale-in">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-target h-8 w-8 text-white animate-bounce-in"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                </div>
+                <h2 id="progressLevelHeading" class="text-3xl font-bold text-white mb-2 animate-slide-down">
+                  Level 1
+                </h2>
+                <p id="progressLevelTitle" class="text-xl text-gray-300 animate-fade-in">Focus Novice</p>
+              </div>
+
+              <div class="mb-6">
+                <div class="flex justify-between items-center mb-2">
+                  <span class="text-sm font-medium text-gray-300 animate-slide-right">XP Progress</span>
+                  <span id="progressXpCounter" class="text-sm font-medium text-gray-300 animate-slide-left">
+                    0 / 500
+                  </span>
+                </div>
+                <div class="w-full bg-white/10 rounded-full h-3 overflow-hidden">
+                  <div id="progressXpBar" class="h-3 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 progress-animated transition-all duration-1000 ease-out" style="width: 0%"></div>
+                </div>
+                <p id="progressXpToNext" class="text-xs text-gray-400 mt-2 animate-fade-in">
+                  500 XP to next level
+                </p>
+              </div>
+
+              <div class="space-y-4 animate-slide-up">
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="bg-white/5 rounded-xl p-4 text-center hover-glow transition-all card-stagger-1 animate-scale-in">
+                    <div id="progressTotalXp" class="text-2xl font-bold text-white animate-number-count">
+                      0
+                    </div>
+                    <div class="text-sm text-gray-300">Total XP</div>
+                  </div>
+                  <div class="bg-white/5 rounded-xl p-4 text-center hover-glow transition-all card-stagger-2 animate-scale-in">
+                    <div id="progressCurrentLevel" class="text-2xl font-bold text-white animate-number-count">1</div>
+                    <div class="text-sm text-gray-300">Current Level</div>
+                  </div>
+                </div>
+
+                <div class="bg-white/5 rounded-xl p-4 animate-slide-up card-stagger-3">
+                  <h3 class="text-lg font-semibold text-white mb-3 animate-fade-in">Level Milestones</h3>
+                  <div class="space-y-2">
+                    <div class="flex items-center justify-between p-2 rounded-lg transition-all hover-slide card-stagger-4 animate-slide-right bg-white/5 text-gray-400 hover:bg-white/10">
+                      <span class="transition-all">Focus Practitioner</span>
+                      <span class="text-sm transition-all">Level 5</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2 rounded-lg transition-all hover-slide card-stagger-5 animate-slide-right bg-white/5 text-gray-400 hover:bg-white/10">
+                      <span class="transition-all">Focus Expert</span>
+                      <span class="text-sm transition-all">Level 10</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2 rounded-lg transition-all hover-slide card-stagger-6 animate-slide-right bg-white/5 text-gray-400 hover:bg-white/10">
+                      <span class="transition-all">Focus Master</span>
+                      <span class="text-sm transition-all">Level 20</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settings-tab" class="tab-pane">
+          <div class="max-w-4xl mx-auto space-y-8">
+            <!-- Header -->
+            <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/20">
+              <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+                <div class="flex items-center gap-3">
+                  <div class="bg-gradient-to-r from-blue-500 to-purple-600 p-3 rounded-2xl">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings h-6 w-6 text-white"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </div>
+                  <div>
+                    <h2 class="text-2xl font-bold text-white">Settings</h2>
+                    <p class="text-base text-gray-300">Customize your Focus Path™ experience</p>
+                  </div>
+                </div>
+
+                <button
+                  id="saveSettingsBtn"
+                  class="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all transform hover:scale-105 text-base bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-save h-4 w-4"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                  Save Changes
+                </button>
+              </div>
+
+              <!-- Tab Navigation -->
+              <div class="flex bg-white/5 rounded-lg p-1 overflow-x-auto">
+                <button class="settings-tab-btn flex items-center gap-2 px-4 py-2 rounded-md transition-all flex-1 justify-center whitespace-nowrap text-sm bg-blue-500/30 text-blue-300" data-settings-tab="profile">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user h-4 w-4"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  <span>Profile</span>
+                </button>
+                <button class="settings-tab-btn flex items-center gap-2 px-4 py-2 rounded-md transition-all flex-1 justify-center whitespace-nowrap text-sm text-gray-300 hover:text-white hover:bg-white/10" data-settings-tab="notifications">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bell h-4 w-4"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                  <span>Notifications</span>
+                </button>
+                <button class="settings-tab-btn flex items-center gap-2 px-4 py-2 rounded-md transition-all flex-1 justify-center whitespace-nowrap text-sm text-gray-300 hover:text-white hover:bg-white/10" data-settings-tab="preferences">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-palette h-4 w-4"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+                  <span>Preferences</span>
+                </button>
+                <button class="settings-tab-btn flex items-center gap-2 px-4 py-2 rounded-md transition-all flex-1 justify-center whitespace-nowrap text-sm text-gray-300 hover:text-white hover:bg-white/10" data-settings-tab="privacy">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield h-4 w-4"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+                  <span>Privacy</span>
+                </button>
+                <button class="settings-tab-btn flex items-center gap-2 px-4 py-2 rounded-md transition-all flex-1 justify-center whitespace-nowrap text-sm text-gray-300 hover:text-white hover:bg-white/10" data-settings-tab="data">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download h-4 w-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                  <span>Data</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Settings Content -->
+            <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/20">
+              <!-- Profile Settings -->
+              <div id="profile-settings" class="settings-content active">
+                <div class="space-y-6">
+                  <h3 class="text-xl font-bold text-white mb-4">Profile Settings</h3>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">
+                      Display Name <span class="text-red-400">*</span>
+                    </label>
+                    <input
+                      id="displayNameInput"
+                      type="text"
+                      class="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      placeholder="Enter your display name"
+                      maxlength="30"
+                      required
+                    />
+                    <div class="flex justify-between items-center mt-1">
+                      <p class="text-xs text-gray-400"><span id="nameLength">0</span>/30 characters</p>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center justify-between p-4 bg-white/5 rounded-lg">
+                    <div>
+                      <h4 class="font-semibold text-white">Anonymous Mode</h4>
+                      <p class="text-sm text-gray-300">Hide your name on leaderboards and public areas</p>
+                    </div>
+                    <button id="anonymousModeToggle" class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all text-sm bg-blue-500/20 text-blue-300">
+                      <svg id="anonymousIcon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye h-4 w-4">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                      <span id="anonymousText">Public</span>
+                    </button>
+                  </div>
+
+                  <div class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                    <h4 class="font-semibold text-blue-300 mb-2">Profile Tips</h4>
+                    <ul class="text-sm text-blue-200 space-y-1">
+                      <li>• Your display name appears on leaderboards and achievements</li>
+                      <li>• Anonymous mode hides your name but keeps your progress</li>
+                      <li>• You can change these settings anytime</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Notifications Settings -->
+              <div id="notifications-settings" class="settings-content hidden">
+                <div class="space-y-6">
+                  <h3 class="text-xl font-bold text-white mb-4">Notification Settings</h3>
+                  
+                  <div class="flex items-center justify-between p-4 bg-white/5 rounded-lg">
+                    <div>
+                      <h4 class="font-semibold text-white">Session Reminders</h4>
+                      <p class="text-sm text-gray-300">Get reminded to start your focus sessions</p>
+                    </div>
+                    <button id="sessionRemindersToggle" class="w-12 h-6 rounded-full transition-all relative bg-blue-500">
+                      <div class="w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 translate-x-6"></div>
+                    </button>
+                  </div>
+
+                  <div class="flex items-center justify-between p-4 bg-white/5 rounded-lg">
+                    <div>
+                      <h4 class="font-semibold text-white">Streak Alerts</h4>
+                      <p class="text-sm text-gray-300">Notifications about your focus streaks</p>
+                    </div>
+                    <button id="streakAlertsToggle" class="w-12 h-6 rounded-full transition-all relative bg-blue-500">
+                      <div class="w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 translate-x-6"></div>
+                    </button>
+                  </div>
+
+                  <div class="flex items-center justify-between p-4 bg-white/5 rounded-lg">
+                    <div>
+                      <h4 class="font-semibold text-white">Achievement Notifications</h4>
+                      <p class="text-sm text-gray-300">Alerts when you unlock achievements</p>
+                    </div>
+                    <button id="achievementNotificationsToggle" class="w-12 h-6 rounded-full transition-all relative bg-blue-500">
+                      <div class="w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 translate-x-6"></div>
+                    </button>
+                  </div>
+
+                  <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+                    <h4 class="font-semibold text-yellow-300 mb-2">Note</h4>
+                    <p class="text-sm text-yellow-200">
+                      Browser notifications require permission. You may need to enable notifications in your browser settings.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Preferences Settings -->
+              <div id="preferences-settings" class="settings-content hidden">
+                <div class="space-y-6">
+                  <h3 class="text-xl font-bold text-white mb-4">App Preferences</h3>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Default Session Type</label>
+                    <select
+                      id="defaultSessionTypeSelect"
+                      class="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    >
+                      <option value="easy">Easy Focus (15 min) - 50 XP</option>
+                      <option value="medium">Medium Focus (30 min) - 100 XP</option>
+                      <option value="hard">Hard Focus (45 min) - 150 XP</option>
+                      <option value="extreme">Extreme Focus (60 min) - 200 XP</option>
+                    </select>
+                  </div>
+
+                  <div class="flex items-center justify-between p-4 bg-white/5 rounded-lg">
+                    <div>
+                      <h4 class="font-semibold text-white">Auto-start Breaks</h4>
+                      <p class="text-sm text-gray-300">Automatically start break timers after sessions</p>
+                    </div>
+                    <button id="autoStartBreaksToggle" class="w-12 h-6 rounded-full transition-all relative bg-gray-600">
+                      <div class="w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 translate-x-0.5"></div>
+                    </button>
+                  </div>
+
+                  <div class="flex items-center justify-between p-4 bg-white/5 rounded-lg">
+                    <div>
+                      <h4 class="font-semibold text-white">Sound Effects</h4>
+                      <p class="text-sm text-gray-300">Play sounds for timer events and notifications</p>
+                    </div>
+                    <button id="soundEnabledToggle" class="w-12 h-6 rounded-full transition-all relative bg-blue-500">
+                      <div class="w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 translate-x-6"></div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Privacy Settings -->
+              <div id="privacy-settings" class="settings-content hidden">
+                <div class="space-y-6">
+                  <h3 class="text-xl font-bold text-white mb-4">Privacy Settings</h3>
+                  
+                  <div class="flex items-center justify-between p-4 bg-white/5 rounded-lg">
+                    <div>
+                      <h4 class="font-semibold text-white">Show in Leaderboard</h4>
+                      <p class="text-sm text-gray-300">Allow your profile to appear in leaderboards</p>
+                    </div>
+                    <button id="showInLeaderboardToggle" class="w-12 h-6 rounded-full transition-all relative bg-blue-500">
+                      <div class="w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 translate-x-6"></div>
+                    </button>
+                  </div>
+
+                  <div class="flex items-center justify-between p-4 bg-white/5 rounded-lg">
+                    <div>
+                      <h4 class="font-semibold text-white">Share Stats</h4>
+                      <p class="text-sm text-gray-300">Share your statistics with other users</p>
+                    </div>
+                    <button id="shareStatsToggle" class="w-12 h-6 rounded-full transition-all relative bg-blue-500">
+                      <div class="w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 translate-x-6"></div>
+                    </button>
+                  </div>
+
+                  <div class="flex items-center justify-between p-4 bg-white/5 rounded-lg">
+                    <div>
+                      <h4 class="font-semibold text-white">Data Collection</h4>
+                      <p class="text-sm text-gray-300">Allow anonymous usage data collection for app improvement</p>
+                    </div>
+                    <button id="dataCollectionToggle" class="w-12 h-6 rounded-full transition-all relative bg-blue-500">
+                      <div class="w-5 h-5 bg-white rounded-full transition-transform absolute top-0.5 translate-x-6"></div>
+                    </button>
+                  </div>
+
+                  <div class="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+                    <h4 class="font-semibold text-green-300 mb-2">Privacy Protection</h4>
+                    <ul class="text-sm text-green-200 space-y-1">
+                      <li>• Your data is stored locally in your browser</li>
+                      <li>• We never share personal information with third parties</li>
+                      <li>• You can export or delete your data at any time</li>
+                      <li>• Anonymous mode hides your identity in public areas</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Data Management -->
+              <div id="data-settings" class="settings-content hidden">
+                <div class="space-y-6">
+                  <h3 class="text-xl font-bold text-white mb-4">Data Management</h3>
+                  
+                  <div class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-6">
+                    <div class="flex items-center gap-3 mb-4">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download h-6 w-6 text-blue-400"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                      <h4 class="text-lg font-semibold text-white">Export Your Data</h4>
+                    </div>
+                    <p class="text-gray-300 mb-4 text-base">
+                      Download a complete copy of all your Focus Path™ data including sessions, progress, settings, and profile information in JSON format.
+                    </p>
+                    <button
+                      id="exportDataBtn"
+                      class="bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 px-6 py-3 rounded-lg transition-all transform hover:scale-105 font-semibold text-base"
+                    >
+                      Export All Data
+                    </button>
+                  </div>
+
+                  <div class="bg-red-500/10 border border-red-500/30 rounded-lg p-6">
+                    <div class="flex items-center gap-3 mb-4">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2 h-6 w-6 text-red-400"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                      <h4 class="text-lg font-semibold text-white">Reset All Data</h4>
+                    </div>
+                    <p class="text-gray-300 mb-4 text-base">
+                      Permanently delete all your data and reset the extension to its default state. This action cannot be undone.
+                    </p>
+                    <button
+                      id="resetDataBtn"
+                      class="bg-red-500/20 hover:bg-red-500/30 text-red-300 px-6 py-3 rounded-lg transition-all font-semibold text-base"
+                    >
+                      Reset All Data
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="assets/dashboard.js"></script>
+</body>
+</html>
