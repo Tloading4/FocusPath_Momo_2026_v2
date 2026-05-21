@@ -1,0 +1,29 @@
+# Node modules
+node_modules/
+functions/node_modules/
+project/node_modules/
+
+# Environment variables (never commit real keys)
+.env
+project/.env
+
+# Build output
+functions/lib/
+project/dist/
+project/.output/
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Vite cache
+project/vite.config.ts.timestamp-*
+
+# Firebase debug logs
+firebase-debug.log
+firebase-debug.*.log
+firestore-debug.log
+ui-debug.log
+
+# OS files
+.DS_Store
+Thumbs.db
